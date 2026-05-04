@@ -4,7 +4,7 @@ import { getAllAdminUsers, updateAdminUserStatus } from '../../../api/adminApi';
 import { useToast } from '../../../shared/components/Toast';
 import SkeletonRow from '../../../shared/components/SkeletonRow';
 
-const ROLE_FILTERS = ['ALL', 'ROLE_USER', 'ROLE_ADMIN'];
+const ROLE_FILTERS = ['ALL', 'CUSTOMER', 'ADMIN'];
 
 export default function UserManagement() {
   const [users, setUsers] = useState([]);
@@ -19,14 +19,15 @@ export default function UserManagement() {
       .then((r) => setUsers(r.data))
       .catch(() => showToast({ type: 'error', title: 'Failed to load users' }))
       .finally(() => setLoading(false));
-  }, []);
+  }, [showToast]);
 
   const handleToggle = async (user) => {
     setToggling(user.id);
+    const newStatus = user.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
     try {
-      const updated = await updateAdminUserStatus(user.id, { active: !user.active });
+      const updated = await updateAdminUserStatus(user.id, { status: newStatus });
       setUsers((prev) => prev.map((u) => (u.id === user.id ? updated.data : u)));
-      showToast({ type: 'success', title: user.active ? 'User Deactivated' : 'User Activated', message: `${user.firstName} ${user.lastName}` });
+      showToast({ type: 'success', title: user.status === 'ACTIVE' ? 'User Deactivated' : 'User Activated', message: `${user.name}` });
     } catch {
       showToast({ type: 'error', title: 'Action Failed', message: 'Could not update user status.' });
     } finally { setToggling(null); }
@@ -35,13 +36,13 @@ export default function UserManagement() {
   const filtered = users.filter((u) => {
     const matchRole = filterRole === 'ALL' || u.role === filterRole;
     const matchSearch = search === '' ||
-      `${u.firstName} ${u.lastName}`.toLowerCase().includes(search.toLowerCase()) ||
+      `${u.name}`.toLowerCase().includes(search.toLowerCase()) ||
       u.email.toLowerCase().includes(search.toLowerCase()) ||
       String(u.id).includes(search);
     return matchRole && matchSearch;
   });
 
-  const activeCount = users.filter((u) => u.active).length;
+  const activeCount = users.filter((u) => u.status === 'ACTIVE').length;
 
   return (
     <div>
@@ -59,7 +60,7 @@ export default function UserManagement() {
         <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
           {ROLE_FILTERS.map((r) => (
             <button key={r} onClick={() => setFilterRole(r)} style={{ background: filterRole === r ? 'var(--brand)' : 'var(--surface)', color: filterRole === r ? '#fff' : 'var(--text-secondary)', border: `1.5px solid ${filterRole === r ? 'var(--brand)' : 'var(--border-medium)'}`, borderRadius: '10px', padding: '0 16px', height: '44px', fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s' }}>
-              {r === 'ALL' ? 'All' : r === 'ROLE_USER' ? 'Customers' : 'Admins'}
+              {r === 'ALL' ? 'All' : r === 'CUSTOMER' ? 'Customers' : 'Admins'}
             </button>
           ))}
         </div>
@@ -84,23 +85,25 @@ export default function UserManagement() {
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
                 <div style={{ width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0, background: 'var(--brand-subtle)', color: 'var(--brand)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: '12px' }}>
-                  {user.firstName[0]}{user.lastName[0]}
+                  {user.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
                 </div>
-                <span style={{ fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {user.firstName} {user.lastName}
+                <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                  <span style={{ fontFamily: 'var(--font-body)', fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {user.name}
                 </span>
+                </div>
               </div>
 
               <span style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: '8px' }}>{user.email}</span>
               <span style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-muted)' }}>{user.phone || '—'}</span>
 
-              <span style={{ background: user.role === 'ROLE_ADMIN' ? 'var(--purple-bg)' : 'var(--brand-subtle)', color: user.role === 'ROLE_ADMIN' ? 'var(--purple)' : 'var(--brand)', border: `1px solid ${user.role === 'ROLE_ADMIN' ? 'var(--purple-border)' : 'var(--brand-border)'}`, borderRadius: '20px', padding: '3px 8px', fontSize: '11px', fontFamily: 'var(--font-body)', fontWeight: 600, whiteSpace: 'nowrap', display: 'inline-block' }}>
-                {user.role === 'ROLE_ADMIN' ? 'Admin' : 'Customer'}
+              <span style={{ background: user.role === 'ADMIN' ? 'var(--purple-bg)' : 'var(--brand-subtle)', color: user.role === 'ADMIN' ? 'var(--purple)' : 'var(--brand)', border: `1px solid ${user.role === 'ADMIN' ? 'var(--purple-border)' : 'var(--brand-border)'}`, borderRadius: '20px', padding: '3px 8px', fontSize: '11px', fontFamily: 'var(--font-body)', fontWeight: 600, whiteSpace: 'nowrap', display: 'inline-block' }}>
+                {user.role === 'ADMIN' ? 'Admin' : 'Customer'}
               </span>
 
-              <button onClick={() => handleToggle(user)} disabled={toggling === user.id} style={{ display: 'flex', alignItems: 'center', gap: '5px', background: user.active ? 'var(--green-bg)' : 'var(--red-bg)', color: user.active ? 'var(--green)' : 'var(--red)', border: `1px solid ${user.active ? 'var(--green-border)' : 'var(--red-border)'}`, borderRadius: '8px', padding: '5px 10px', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap' }}>
-                {toggling === user.id ? <Loader2 size={12} className="spin" /> : user.active ? <CheckCircle size={12} /> : <XCircle size={12} />}
-                {user.active ? 'Active' : 'Inactive'}
+              <button onClick={() => handleToggle(user)} disabled={toggling === user.id} style={{ display: 'flex', alignItems: 'center', gap: '5px', background: user.status === 'ACTIVE' ? 'var(--green-bg)' : 'var(--red-bg)', color: user.status === 'ACTIVE' ? 'var(--green)' : 'var(--red)', border: `1px solid ${user.status === 'ACTIVE' ? 'var(--green-border)' : 'var(--red-border)'}`, borderRadius: '8px', padding: '5px 10px', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap' }}>
+                {toggling === user.id ? <Loader2 size={12} className="spin" /> : user.status === 'ACTIVE' ? <CheckCircle size={12} /> : <XCircle size={12} />}
+                {user.status === 'ACTIVE' ? 'Active' : 'Inactive'}
               </button>
             </div>
           ))}

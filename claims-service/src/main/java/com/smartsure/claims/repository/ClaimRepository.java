@@ -11,6 +11,7 @@ import java.util.List;
 public interface ClaimRepository extends JpaRepository<Claim, Long> {
     List<Claim> findByUserId(Long userId);
     List<Claim> findByPolicyId(Long policyId);
+    long countByStatus(ClaimStatus status);
     long countByStatusIn(List<ClaimStatus> statuses);
     List<Claim> findByStatusIn(List<ClaimStatus> statuses);
 }

@@ -19,21 +19,23 @@ class ClaimsCoverageBoosterTest {
 
     @Test
     void testEntitiesAndDtos() {
-        Claim claim = Claim.builder().id(1L).policyId(1L).userId(1L).description("D").status(ClaimStatus.SUBMITTED).build();
+        Claim claim = Claim.builder().id(1L).policyId(1L).userId(1L).description("D").status(ClaimStatus.SUBMITTED).remarks("R").build();
         assertEquals(1L, claim.getId());
         assertEquals(ClaimStatus.SUBMITTED, claim.getStatus());
+        assertEquals("R", claim.getRemarks());
 
         ClaimDocument doc = ClaimDocument.builder().id(1L).claim(claim).fileName("f").build();
         assertEquals("f", doc.getFileName());
 
         // DTOs
-        ClaimDTO dto = ClaimDTO.builder().id(1L).build();
+        ClaimDTO dto = ClaimDTO.builder().id(1L).remarks("R").build();
         assertEquals(1L, dto.getId());
+        assertEquals("R", dto.getRemarks());
 
         ClaimDocumentDTO docDto = ClaimDocumentDTO.builder().id(1L).build();
         assertEquals(1L, docDto.getId());
 
-        ClaimInitiateRequest initReq = new ClaimInitiateRequest(1L, 1L, "desc");
+        ClaimInitiateRequest initReq = new ClaimInitiateRequest(1L, 1L, "desc", 1000.0);
         assertEquals("desc", initReq.getDescription());
     }
 

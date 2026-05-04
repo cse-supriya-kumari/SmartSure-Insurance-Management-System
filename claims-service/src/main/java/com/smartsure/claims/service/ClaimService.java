@@ -17,7 +17,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 @Service
@@ -45,7 +50,7 @@ public class ClaimService {
     }
 
     @CircuitBreaker(name = "policyService", fallbackMethod = "initiateClaimFallback")
-    @CacheEvict(value = {"userClaims", "pendingClaims"}, allEntries = true)
+    //@CacheEvict(value = {"userClaims", "pendingClaims"}, allEntries = true)
     public ClaimDTO initiateClaim(ClaimInitiateRequest request) {
         try {
             policyServiceClient.getPolicyById(request.getPolicyId());
@@ -57,6 +62,7 @@ public class ClaimService {
                 .policyId(request.getPolicyId())
                 .userId(request.getUserId())
                 .description(request.getDescription())
+                .claimedAmount(request.getClaimedAmount())
                 .status(ClaimStatus.SUBMITTED)
                 .build();
 
@@ -74,6 +80,7 @@ public class ClaimService {
         return mapToDTO(claim);
     }
 
+    //@CacheEvict(value = {"userClaims", "pendingClaims"}, allEntries = true)
     public ClaimDocumentDTO uploadDocument(Long claimId, MultipartFile file) throws IOException {
         Claim claim = claimRepository.findById(claimId)
                 .orElseThrow(() -> new ResourceNotFoundException("Claim not found"));
@@ -112,7 +119,7 @@ public class ClaimService {
         return mapToDTO(claim);
     }
 
-    @org.springframework.cache.annotation.Cacheable(value = "userClaims", key = "#userId")
+    //@org.springframework.cache.annotation.Cacheable(value = "userClaims", key = "#userId")
     public List<ClaimDTO> getUserClaims(Long userId) {
         return claimRepository.findByUserId(userId)
                 .stream()
@@ -120,7 +127,8 @@ public class ClaimService {
                 .toList();
     }
 
-    public ClaimDTO updateClaimStatus(Long claimId, String status) {
+    @CacheEvict(value = {"userClaims", "pendingClaims"}, allEntries = true)
+    public ClaimDTO updateClaimStatus(Long claimId, String status, String remarks) {
         Claim claim = claimRepository.findById(claimId)
                 .orElseThrow(() -> new ResourceNotFoundException("Claim not found"));
 
@@ -133,6 +141,9 @@ public class ClaimService {
 
         String oldStatus = claim.getStatus().name();
         claim.setStatus(parsedStatus);
+        if (remarks != null) {
+            claim.setRemarks(remarks);
+        }
         claim = claimRepository.save(claim);
 
         ClaimStatusChangedEvent event = ClaimStatusChangedEvent.builder()
@@ -154,7 +165,15 @@ public class ClaimService {
         return claimRepository.countByStatusIn(List.of(ClaimStatus.SUBMITTED, ClaimStatus.UNDER_REVIEW));
     }
 
-    @org.springframework.cache.annotation.Cacheable(value = "pendingClaims", key = "'pending'")
+    public long getApprovedClaimsCount() {
+        return claimRepository.countByStatus(ClaimStatus.APPROVED);
+    }
+
+    public long getRejectedClaimsCount() {
+        return claimRepository.countByStatus(ClaimStatus.REJECTED);
+    }
+
+    //@org.springframework.cache.annotation.Cacheable(value = "pendingClaims", key = "'pending'")
     public List<ClaimDTO> getPendingClaims() {
         return claimRepository.findByStatusIn(List.of(ClaimStatus.SUBMITTED, ClaimStatus.UNDER_REVIEW))
                 .stream()
@@ -166,6 +185,24 @@ public class ClaimService {
         Claim claim = claimRepository.findById(claimId)
                 .orElseThrow(() -> new ResourceNotFoundException("Claim not found"));
         return claimMapper.toClaimDocumentDTOList(documentRepository.findByClaim_Id(claim.getId()));
+    }
+
+    public Resource downloadDocument(Long documentId) {
+        ClaimDocument doc = documentRepository.findById(documentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Document not found"));
+        try {
+            Path path = Paths.get(doc.getFilePath());
+            Resource resource = new UrlResource(path.toUri());
+            if (resource.exists()) return resource;
+            else throw new ResourceNotFoundException("File not found on disk");
+        } catch (Exception e) {
+            throw new RuntimeException("Error loading file", e);
+        }
+    }
+
+    public ClaimDocument getDocumentEntity(Long documentId) {
+        return documentRepository.findById(documentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Document not found"));
     }
 
     private ClaimDTO mapToDTO(Claim claim) {

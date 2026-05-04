@@ -26,12 +26,13 @@ const PolicyProducts= () => {
   const [confirmDelete, setConfirmDelete] = useState(null);
   const { showToast } = useToast();
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, reset, formState: { errors } } = useForm({
     resolver: yupResolver(schema),
   });
 
   useEffect(() => {
     loadPolicies();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadPolicies = () => {

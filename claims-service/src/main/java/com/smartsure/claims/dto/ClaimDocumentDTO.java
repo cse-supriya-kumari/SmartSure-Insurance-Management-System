@@ -15,4 +15,7 @@ public class ClaimDocumentDTO {
     private String fileType;
     @io.swagger.v3.oas.annotations.media.Schema(description = "Server storage path", example = "uploads/claims/medical_bill.pdf")
     private String filePath;
+
+    @io.swagger.v3.oas.annotations.media.Schema(description = "Submission timestamp")
+    private java.time.LocalDateTime uploadedAt;
 }

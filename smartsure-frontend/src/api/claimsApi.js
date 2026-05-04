@@ -6,7 +6,7 @@ export const uploadDocument = (claimId, file) => {
   const formData = new FormData();
   formData.append('claimId', String(claimId));
   formData.append('file', file);
-  return api.post('/api/claims/upload', formData, {
+  return api.post(`/api/claims/${claimId}/upload`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
 };

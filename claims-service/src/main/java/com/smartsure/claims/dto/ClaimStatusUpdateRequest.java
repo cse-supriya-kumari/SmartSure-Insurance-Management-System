@@ -8,4 +8,6 @@ public class ClaimStatusUpdateRequest {
 
     @NotBlank(message = "Status is required")
     private String status;
+
+    private String remarks;
 }

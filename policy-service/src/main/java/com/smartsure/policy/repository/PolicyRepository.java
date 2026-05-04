@@ -9,4 +9,7 @@ import java.util.List;
 @Repository
 public interface PolicyRepository extends JpaRepository<Policy, Long> {
     List<Policy> findByUserId(Long userId);
+
+    @org.springframework.data.jpa.repository.Query("SELECT SUM(p.premiumAmount) FROM Policy p")
+    java.math.BigDecimal sumTotalPremiumAmount();
 }

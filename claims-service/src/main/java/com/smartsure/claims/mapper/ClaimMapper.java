@@ -12,6 +12,8 @@ import java.util.List;
 public interface ClaimMapper {
 
     @Mapping(target = "status", expression = "java(claim.getStatus().name())")
+    @Mapping(target = "submittedAt", source = "claim.createdAt")
+    @Mapping(target = "claimedAmount", source = "claim.claimedAmount")
     @Mapping(target = "documents", source = "documents")
     ClaimDTO toClaimDTO(Claim claim, List<ClaimDocument> documents);
 

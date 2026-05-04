@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { format } from 'date-fns';
-import { ArrowLeft, FileText, CheckCircle, XCircle, Loader2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, FileText, CheckCircle, XCircle, Loader2, AlertCircle, Download, ExternalLink } from 'lucide-react';
 import { getAdminClaimById, getAdminClaimDocuments, reviewClaim } from '../../../api/adminApi';
 import StatusBadge from '../../../shared/components/StatusBadge';
 import SkeletonRow from '../../../shared/components/SkeletonRow';
@@ -85,7 +85,7 @@ export default function ClaimReview() {
                 { label: 'User ID', value: `#${claim.userId}` },
                 { label: 'Policy ID', value: `#${claim.policyId}` },
                 { label: 'Claimed Amount', value: `₹${claim.claimedAmount.toLocaleString('en-IN')}` },
-                { label: 'Submitted', value: format(new Date(claim.submittedAt), 'dd MMM yyyy, hh:mm a') },
+                { label: 'Submitted', value: claim.submittedAt ? format(new Date(claim.submittedAt), 'dd MMM yyyy, hh:mm a') : '—' },
               ].map(item => (
                 <div key={item.label} style={{ background: 'var(--surface-2)', borderRadius: '10px', padding: '14px' }}>
                   <div style={{ fontFamily: 'var(--font-body)', fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>{item.label}</div>
@@ -107,14 +107,52 @@ export default function ClaimReview() {
             <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 16px' }}>Documents ({docs.length})</h2>
             {docs.length === 0 ? (
               <p style={{ fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--text-muted)' }}>No documents submitted.</p>
-            ) : docs.map(doc => (
-              <div key={doc.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', background: 'var(--surface-2)', borderRadius: '8px', border: '1px solid var(--border)', marginBottom: '8px' }}>
-                <FileText size={16} style={{ color: 'var(--brand)', flexShrink: 0 }} />
-                <span style={{ flex: 1, fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-primary)' }}>{doc.fileName}</span>
-                <span style={{ fontFamily: 'var(--font-body)', fontSize: '11px', color: 'var(--text-faint)' }}>{doc.fileType}</span>
-                {doc.downloadUrl && <a href={doc.downloadUrl} target="_blank" rel="noreferrer" style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--brand)', fontWeight: 600, textDecoration: 'none' }}>Download</a>}
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {docs.map(doc => {
+                  const downloadUrl = `http://localhost:8080/api/claims/documents/download/${doc.id}`;
+                  const isImage = doc.fileType?.startsWith('image/');
+                  
+                  return (
+                    <div key={doc.id} className="document-preview-card" style={{ background: 'var(--surface-2)', borderRadius: '12px', border: '1px solid var(--border)', overflow: 'hidden' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <FileText size={18} style={{ color: 'var(--brand)' }} />
+                          <div>
+                            <div style={{ fontFamily: 'var(--font-body)', fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>{doc.fileName}</div>
+                            <div style={{ fontFamily: 'var(--font-body)', fontSize: '11px', color: 'var(--text-faint)' }}>{doc.fileType}</div>
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <a href={downloadUrl} download={doc.fileName} className="btn-ghost" style={{ padding: '6px 10px', fontSize: '12px', gap: '6px' }}>
+                            <Download size={14} /> Download
+                          </a>
+                          <a href={downloadUrl} target="_blank" rel="noreferrer" className="btn-ghost" style={{ padding: '6px 10px', fontSize: '12px', gap: '6px' }}>
+                            <ExternalLink size={14} /> View Full
+                          </a>
+                        </div>
+                      </div>
+                      
+                      {isImage && (
+                        <div style={{ padding: '16px', background: 'var(--surface-3)', display: 'flex', justifyContent: 'center' }}>
+                          <div style={{ width: '100%', maxWidth: '600px', height: 'auto', minHeight: '300px', maxHeight: '500px', background: '#fff', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border-medium)', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <img 
+                              src={downloadUrl} 
+                              alt={doc.fileName}
+                              style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                              onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.src = 'https://via.placeholder.com/400x300?text=Image+Load+Failed';
+                              }}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
-            ))}
+            )}
           </div>
         </div>
 

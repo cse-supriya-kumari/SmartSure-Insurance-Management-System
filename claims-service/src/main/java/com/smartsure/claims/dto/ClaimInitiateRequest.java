@@ -20,4 +20,8 @@ public class ClaimInitiateRequest {
     @io.swagger.v3.oas.annotations.media.Schema(description = "Reason and context for the claim", example = "Theft of electronics from residence")
     @NotBlank(message = "Description is required")
     private String description;
+
+    @io.swagger.v3.oas.annotations.media.Schema(description = "Amount being claimed", example = "50000.00")
+    @NotNull(message = "Claimed amount is required")
+    private Double claimedAmount;
 }

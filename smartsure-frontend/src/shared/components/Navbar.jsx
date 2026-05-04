@@ -9,14 +9,14 @@ export default function Navbar({ variant = 'public', onMenuClick }) {
   const [showLogout, setShowLogout] = useState(false);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { firstName, lastName } = useAppSelector((s) => s.auth);
+  const { name } = useAppSelector((s) => s.auth);
 
   const handleConfirmLogout = () => {
     dispatch(logout());
     navigate('/login');
   };
 
-  const initials = firstName && lastName ? `${firstName[0]}${lastName[0]}`.toUpperCase() : '??';
+  const initials = name ? name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '??';
 
   return (
     <>
@@ -41,7 +41,7 @@ export default function Navbar({ variant = 'public', onMenuClick }) {
             <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--brand-subtle)', color: 'var(--brand)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: '13px', flexShrink: 0 }}>
               {initials}
             </div>
-            <span className="user-name-display" style={{ fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--text-secondary)', fontWeight: 500 }}>{firstName}</span>
+            <span className="user-name-display" style={{ fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--text-secondary)', fontWeight: 500 }}>{name?.split(' ')[0]}</span>
             <button
               onClick={() => setShowLogout(true)}
               aria-label="Sign out"

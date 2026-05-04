@@ -27,10 +27,10 @@ const adminNavGroups = [
 ];
 
 export default function Sidebar({ isOpen, onClose }) {
-  const { role, firstName, lastName } = useAppSelector((s) => s.auth);
-  const isAdmin = role === 'ROLE_ADMIN';
+  const { role, name } = useAppSelector((s) => s.auth);
+  const isAdmin = role === 'ADMIN';
   const navGroups = isAdmin ? adminNavGroups : userNavGroups;
-  const initials = firstName && lastName ? `${firstName[0]}${lastName[0]}`.toUpperCase() : '??';
+  const initials = name ? name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '??';
 
   return (
     <>
@@ -54,7 +54,7 @@ export default function Sidebar({ isOpen, onClose }) {
           </div>
           <div style={{ minWidth: 0 }}>
             <div style={{ fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {firstName} {lastName}
+              {name}
             </div>
             <span style={{ fontSize: '10px', fontFamily: 'var(--font-body)', background: 'var(--brand-subtle)', color: 'var(--brand)', borderRadius: '999px', padding: '2px 8px', fontWeight: 600 }}>
               {isAdmin ? 'Admin' : 'Customer'}

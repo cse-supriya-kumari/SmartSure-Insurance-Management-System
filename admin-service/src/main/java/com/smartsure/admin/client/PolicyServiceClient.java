@@ -10,6 +10,9 @@ public interface PolicyServiceClient {
     @GetMapping("/count")
     Long getTotalPolicies();
 
+    @GetMapping("/revenue")
+    java.math.BigDecimal getTotalRevenue();
+
     /**
      * policy-service's createPolicyType endpoint requires an Authorization header
      * to validate that the caller is an ADMIN. We must forward it from the

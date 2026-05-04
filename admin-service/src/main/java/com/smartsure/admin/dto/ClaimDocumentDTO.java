@@ -12,4 +12,5 @@ public class ClaimDocumentDTO {
     private String fileName;
     private String fileType;
     private String filePath;
+    private java.time.LocalDateTime uploadedAt;
 }

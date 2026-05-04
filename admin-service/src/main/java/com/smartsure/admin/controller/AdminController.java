@@ -81,22 +81,27 @@ public class AdminController {
     @Operation(summary = "Get Pending Claims", description = "List all claims currently awaiting admin review")
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/claims/pending")
-    public ResponseEntity<List<ClaimDetailsDTO>> getPendingClaims() {
-        return ResponseEntity.ok(adminService.getPendingClaims());
+    public ResponseEntity<List<ClaimDetailsDTO>> getPendingClaims(
+            @Parameter(hidden = true) @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader) {
+        return ResponseEntity.ok(adminService.getPendingClaims(authorizationHeader));
     }
 
     @Operation(summary = "Get Claim Details", description = "View full details of a specific claim")
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/claims/{claimId}")
-    public ResponseEntity<ClaimDetailsDTO> getClaimById(@PathVariable Long claimId) {
-        return ResponseEntity.ok(adminService.getClaimById(claimId));
+    public ResponseEntity<ClaimDetailsDTO> getClaimById(
+            @PathVariable Long claimId,
+            @Parameter(hidden = true) @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader) {
+        return ResponseEntity.ok(adminService.getClaimById(claimId, authorizationHeader));
     }
 
     @Operation(summary = "Get Claim Evidence", description = "View attached documents for a specific claim")
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/claims/{claimId}/documents")
-    public ResponseEntity<List<ClaimDocumentDTO>> getClaimDocuments(@PathVariable Long claimId) {
-        return ResponseEntity.ok(adminService.getClaimDocuments(claimId));
+    public ResponseEntity<List<ClaimDocumentDTO>> getClaimDocuments(
+            @PathVariable Long claimId,
+            @Parameter(hidden = true) @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader) {
+        return ResponseEntity.ok(adminService.getClaimDocuments(claimId, authorizationHeader));
     }
 
     @Operation(summary = "Create Policy Product", description = "Define a new policy type offering")

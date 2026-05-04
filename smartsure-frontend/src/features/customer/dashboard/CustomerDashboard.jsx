@@ -17,7 +17,7 @@ function getGreeting() {
 }
 
 const CustomerDashboard= () => {
-  const { userId, firstName } = useAppSelector(s => s.auth);
+  const { userId, name } = useAppSelector(s => s.auth);
   const [policies, setPolicies] = useState([]);
   const [claims, setClaims] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -55,7 +55,7 @@ const CustomerDashboard= () => {
     <div>
       <div style={{ marginBottom: '28px' }}>
         <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: '26px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>
-          Good {getGreeting()}, {firstName} 👋
+          Good {getGreeting()}, {name?.split(' ')[0]} 👋
         </h1>
         <p style={{ fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--text-muted)', margin: 0 }}>
           You have {activePolicies} active {activePolicies === 1 ? 'policy' : 'policies'} and {openClaims} open {openClaims === 1 ? 'claim' : 'claims'}.

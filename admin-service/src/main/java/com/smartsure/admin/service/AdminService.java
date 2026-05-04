@@ -54,19 +54,19 @@ public class AdminService {
     }
 
     @CircuitBreaker(name = "claimsService", fallbackMethod = "reviewClaimFallback")
-    @CacheEvict(value = {"pendingClaims", "dashboardReports"}, allEntries = true)
+    //@CacheEvict(value = {"pendingClaims", "dashboardReports"}, allEntries = true)
     public ClaimReviewResponse reviewClaim(Long claimId, ClaimReviewRequest request, String authorizationHeader) {
         try {
             logger.info("Reviewing claim id={} with status={}", claimId, request.getStatus());
 
             // Fetch the current claim first so we can record the real old status in the audit log
-            ClaimDetailsDTO currentClaim = claimsServiceClient.getClaimById(claimId);
+            ClaimDetailsDTO currentClaim = claimsServiceClient.getClaimById(claimId, authorizationHeader);
             if (currentClaim == null) {
                 throw new ResourceNotFoundException("Claim not found: " + claimId);
             }
             String oldStatus = currentClaim.getStatus();
 
-            ClaimDetailsDTO updatedClaim = claimsServiceClient.updateClaimStatus(claimId, request.getStatus().name());
+            ClaimDetailsDTO updatedClaim = claimsServiceClient.updateClaimStatus(claimId, request.getStatus().name(), request.getRemarks(), authorizationHeader);
             if (updatedClaim == null) {
                 throw new ResourceNotFoundException("Claim not found or could not be updated");
             }
@@ -92,7 +92,8 @@ public class AdminService {
         } catch (ResourceNotFoundException ex) {
             throw ex;
         } catch (Exception ex) {
-            throw new ServiceUnavailableException("Claims service is unavailable");
+            logger.error("Error reviewing claim id={}: {}", claimId, ex.getMessage(), ex);
+            throw new ServiceUnavailableException("Claims service error: " + ex.getMessage());
         }
     }
 
@@ -102,14 +103,20 @@ public class AdminService {
         try {
             Long totalUsers = authServiceClient.getTotalUsers(authorizationHeader);
             Long totalPolicies = policyServiceClient.getTotalPolicies();
-            Long totalClaims = claimsServiceClient.getTotalClaims();
-            Long pendingClaims = claimsServiceClient.getPendingClaimsCount();
+            Long totalClaims = claimsServiceClient.getTotalClaims(authorizationHeader);
+            Long pendingClaims = claimsServiceClient.getPendingClaimsCount(authorizationHeader);
+            Long approvedClaims = claimsServiceClient.getApprovedClaimsCount(authorizationHeader);
+            Long rejectedClaims = claimsServiceClient.getRejectedClaimsCount(authorizationHeader);
+            java.math.BigDecimal totalRevenue = policyServiceClient.getTotalRevenue();
 
             return ReportDTO.builder()
                     .totalUsers(Objects.requireNonNullElse(totalUsers, 0L))
                     .totalPolicies(Objects.requireNonNullElse(totalPolicies, 0L))
                     .totalClaims(Objects.requireNonNullElse(totalClaims, 0L))
                     .pendingClaims(Objects.requireNonNullElse(pendingClaims, 0L))
+                    .approvedClaims(Objects.requireNonNullElse(approvedClaims, 0L))
+                    .rejectedClaims(Objects.requireNonNullElse(rejectedClaims, 0L))
+                    .totalRevenue(Objects.requireNonNullElse(totalRevenue, java.math.BigDecimal.ZERO))
                     .build();
         } catch (Exception ex) {
             throw new ServiceUnavailableException("Unable to generate report because one or more services are unavailable");
@@ -122,8 +129,8 @@ public class AdminService {
         try {
             Long totalUsers = authServiceClient.getTotalUsers(authorizationHeader);
             Long totalPolicies = policyServiceClient.getTotalPolicies();
-            Long totalClaims = claimsServiceClient.getTotalClaims();
-            Long pendingClaims = claimsServiceClient.getPendingClaimsCount();
+            Long totalClaims = claimsServiceClient.getTotalClaims(authorizationHeader);
+            Long pendingClaims = claimsServiceClient.getPendingClaimsCount(authorizationHeader);
 
             ReportDTO report = ReportDTO.builder()
                     .totalUsers(Objects.requireNonNullElse(totalUsers, 0L))
@@ -204,19 +211,19 @@ public class AdminService {
     }
 
     @CircuitBreaker(name = "claimsService", fallbackMethod = "getPendingClaimsFallback")
-    @Cacheable(value = "pendingClaims", key = "'pending-claims'")
-    public List<ClaimDetailsDTO> getPendingClaims() {
+    //@Cacheable(value = "pendingClaims", key = "'pending'")
+    public List<ClaimDetailsDTO> getPendingClaims(String authorizationHeader) {
         try {
-            return claimsServiceClient.getPendingClaims();
+            return claimsServiceClient.getPendingClaims(authorizationHeader);
         } catch (Exception ex) {
             throw new ServiceUnavailableException("Claims service is unavailable");
         }
     }
 
     @CircuitBreaker(name = "claimsService", fallbackMethod = "getClaimByIdFallback")
-    public ClaimDetailsDTO getClaimById(Long claimId) {
+    public ClaimDetailsDTO getClaimById(Long claimId, String authorizationHeader) {
         try {
-            ClaimDetailsDTO claim = claimsServiceClient.getClaimById(claimId);
+            ClaimDetailsDTO claim = claimsServiceClient.getClaimById(claimId, authorizationHeader);
             if (claim == null) {
                 throw new ResourceNotFoundException("Claim not found");
             }
@@ -229,9 +236,9 @@ public class AdminService {
     }
 
     @CircuitBreaker(name = "claimsService", fallbackMethod = "getClaimDocumentsFallback")
-    public List<ClaimDocumentDTO> getClaimDocuments(Long claimId) {
+    public List<ClaimDocumentDTO> getClaimDocuments(Long claimId, String authorizationHeader) {
         try {
-            return claimsServiceClient.getClaimDocuments(claimId);
+            return claimsServiceClient.getClaimDocuments(claimId, authorizationHeader);
         } catch (Exception ex) {
             throw new ServiceUnavailableException("Claims service is unavailable");
         }
@@ -252,13 +259,13 @@ public class AdminService {
     public UserSummaryDTO updateUserStatusFallback(Long id, UserStatusUpdateRequest request, String authorizationHeader, Throwable throwable) {
         throw new ServiceUnavailableException("Auth service is currently unavailable.");
     }
-    public List<ClaimDetailsDTO> getPendingClaimsFallback(Throwable throwable) {
+    public List<ClaimDetailsDTO> getPendingClaimsFallback(String authorizationHeader, Throwable throwable) {
         throw new ServiceUnavailableException("Claims service is currently unavailable.");
     }
-    public ClaimDetailsDTO getClaimByIdFallback(Long claimId, Throwable throwable) {
+    public ClaimDetailsDTO getClaimByIdFallback(Long claimId, String authorizationHeader, Throwable throwable) {
         throw new ServiceUnavailableException("Claims service is currently unavailable.");
     }
-    public List<ClaimDocumentDTO> getClaimDocumentsFallback(Long claimId, Throwable throwable) {
+    public List<ClaimDocumentDTO> getClaimDocumentsFallback(Long claimId, String authorizationHeader, Throwable throwable) {
         throw new ServiceUnavailableException("Claims service is currently unavailable.");
     }
 

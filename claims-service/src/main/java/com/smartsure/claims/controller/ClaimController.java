@@ -14,6 +14,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import java.io.IOException;
 import java.util.List;
 
@@ -63,8 +65,9 @@ public class ClaimController {
     @PutMapping("/{claimId}/status")
     public ResponseEntity<ClaimDTO> updateClaimStatus(
             @PathVariable Long claimId,
-            @RequestParam("status") String status) {
-        return ResponseEntity.ok(claimService.updateClaimStatus(claimId, status));
+            @RequestParam("status") String status,
+            @RequestParam(value = "remarks", required = false) String remarks) {
+        return ResponseEntity.ok(claimService.updateClaimStatus(claimId, status, remarks));
     }
 
     @Operation(summary = "Get Total Claims", description = "Get total count of claims in the system")
@@ -79,6 +82,18 @@ public class ClaimController {
         return ResponseEntity.ok(claimService.getPendingClaimsCount());
     }
 
+    @Operation(summary = "Get Approved Claims Count", description = "Get count of claims with APPROVED status")
+    @GetMapping("/count/approved")
+    public ResponseEntity<Long> getApprovedClaimsCount() {
+        return ResponseEntity.ok(claimService.getApprovedClaimsCount());
+    }
+
+    @Operation(summary = "Get Rejected Claims Count", description = "Get count of claims with REJECTED status")
+    @GetMapping("/count/rejected")
+    public ResponseEntity<Long> getRejectedClaimsCount() {
+        return ResponseEntity.ok(claimService.getRejectedClaimsCount());
+    }
+
     @Operation(summary = "List Pending Claims", description = "Get all claims that are currently in PENDING status")
     @GetMapping("/pending")
     public ResponseEntity<List<ClaimDTO>> getPendingClaims() {
@@ -89,5 +104,16 @@ public class ClaimController {
     @GetMapping("/{claimId}/documents")
     public ResponseEntity<List<ClaimDocumentDTO>> getClaimDocuments(@PathVariable Long claimId) {
         return ResponseEntity.ok(claimService.getClaimDocuments(claimId));
+    }
+
+    @GetMapping("/documents/download/{documentId}")
+    public ResponseEntity<Resource> downloadDocument(@PathVariable Long documentId) {
+        Resource resource = claimService.downloadDocument(documentId);
+        com.smartsure.claims.entity.ClaimDocument doc = claimService.getDocumentEntity(documentId);
+        
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(doc.getFileType()))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + doc.getFileName() + "\"")
+                .body(resource);
     }
 }

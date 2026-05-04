@@ -7,3 +7,6 @@ bin/
 .settings/
 .project
 .classpath
+.idea/
+node_modules/
+build/

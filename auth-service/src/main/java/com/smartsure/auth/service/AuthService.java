@@ -69,12 +69,16 @@ public class AuthService {
                 .status("ACTIVE")
                 .build();
 
-        userRepository.save(user);
+        user = userRepository.save(user);
         emailService.sendWelcomeEmail(user.getName(), user.getEmail());
+        
+        UserDetailsImpl userDetails = new UserDetailsImpl(user);
+        String token = jwtUtil.generateToken(userDetails, user.getRole().name());
 
         return AuthResponse.builder()
-                .token(null)
+                .token(token)
                 .role(user.getRole().name())
+                .userId(user.getId())
                 .name(user.getName())
                 .build();
     }
@@ -111,6 +115,7 @@ public class AuthService {
             return AuthResponse.builder()
                     .token(token)
                     .role(user.getRole().name())
+                    .userId(user.getId())
                     .name(user.getName())
                     .build();
         } catch (BadCredentialsException e) {

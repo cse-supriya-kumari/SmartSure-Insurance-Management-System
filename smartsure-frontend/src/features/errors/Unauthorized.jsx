@@ -7,7 +7,7 @@ const Unauthorized= () => {
   const navigate = useNavigate();
   const { isAuthenticated, role } = useAppSelector(s => s.auth);
 
-  const dashboardLink = role === 'ROLE_ADMIN' ? '/admin/dashboard' : '/dashboard';
+  const dashboardLink = role === 'ADMIN' ? '/admin/dashboard' : '/dashboard';
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 16px' }}>

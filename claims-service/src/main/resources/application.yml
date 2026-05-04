@@ -5,19 +5,22 @@ spring:
   application:
     name: claims-service
 
+  cloud:
+    config:
+      enabled: false
+
   config:
     import: 
-      - "optional:configserver:http://localhost:8888"
       - "optional:file:.env[.properties]"
       - "optional:file:../.env[.properties]"
 
   datasource:
-    url: jdbc:mysql://localhost:3306/claims_db
+    url: ${CLAIMS_DATASOURCE_URL:jdbc:mysql://127.0.0.1:3307/claims_db}
     username: root
     password: ${DB_PASSWORD}
 
   rabbitmq:
-    host: localhost
+    host: 127.0.0.1
     port: 5672
     username: guest
     password: ${RABBITMQ_PASSWORD:guest}
@@ -39,7 +42,7 @@ spring:
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: http://127.0.0.1:8761/eureka/
   instance:
     prefer-ip-address: true
 
@@ -75,7 +78,7 @@ management:
       probability: 0.0
   zipkin:
     tracing:
-      endpoint: http://localhost:9411/api/v2/spans
+      endpoint: http://127.0.0.1:9411/api/v2/spans
   health:
     circuitbreakers:
       enabled: true

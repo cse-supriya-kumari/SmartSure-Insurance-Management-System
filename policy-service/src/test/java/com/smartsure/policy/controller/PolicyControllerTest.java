@@ -24,6 +24,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(PolicyController.class)
+@org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc(addFilters = false)
 class PolicyControllerTest {
 
     @Autowired
@@ -92,4 +93,37 @@ class PolicyControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].name").value("Health Insurance"));
     }
-}
+
+    @Test
+    void getPolicyTypeById_success() throws Exception {
+        PolicyTypeDTO type = PolicyTypeDTO.builder()
+                .id(1L)
+                .name("Health Insurance")
+                .basePremium(new BigDecimal("12000"))
+                .build();
+
+        when(policyService.getPolicyTypeById(1L)).thenReturn(type);
+
+        mockMvc.perform(get("/api/policies/types/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Health Insurance"));
+    }
+
+    @Test
+    void getUserPolicies_success() throws Exception {
+        when(policyService.getUserPolicies(10L)).thenReturn(Collections.emptyList());
+
+        mockMvc.perform(get("/api/policies/user/10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray());
+    }
+
+    @Test
+    void getTotalPolicies_success() throws Exception {
+        when(policyService.getTotalPolicies()).thenReturn(50L);
+
+        mockMvc.perform(get("/api/policies/count"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("50"));
+    }
+}

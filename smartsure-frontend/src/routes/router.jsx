@@ -37,7 +37,7 @@ function AdminRoute({ children }) {
   const { isAuthenticated, role } = useAppSelector((s) => s.auth);
   const location = useLocation();
   if (!isAuthenticated) return <Navigate to="/login" state={{ from: location }} replace />;
-  if (role !== 'ROLE_ADMIN') return <Navigate to="/unauthorized" replace />;
+  if (role !== 'ADMIN') return <Navigate to="/unauthorized" replace />;
   return children;
 }
 

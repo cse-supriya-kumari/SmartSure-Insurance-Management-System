@@ -46,6 +46,9 @@ class PolicyServiceTest {
     @Mock
     private PolicyEventPublisher policyEventPublisher;
 
+    @Mock
+    private com.smartsure.policy.mapper.PolicyMapper policyMapper;
+
     @InjectMocks
     private PolicyService policyService;
 
@@ -92,6 +95,8 @@ class PolicyServiceTest {
                 .build();
 
         when(premiumRepository.saveAll(anyList())).thenReturn(List.of(premium));
+        PolicyDTO dto = PolicyDTO.builder().userId(10L).status("ACTIVE").build();
+        when(policyMapper.toPolicyDTO(any(Policy.class), anyList())).thenReturn(dto);
 
         PolicyDTO result = policyService.purchasePolicy(request, "ValidToken");
 
@@ -127,6 +132,8 @@ class PolicyServiceTest {
 
         when(policyRepository.findById(100L)).thenReturn(Optional.of(policy));
         when(premiumRepository.findByPolicyId(100L)).thenReturn(List.of());
+        PolicyDTO dto = PolicyDTO.builder().id(100L).policyTypeName("Health Insurance").build();
+        when(policyMapper.toPolicyDTO(any(Policy.class), anyList())).thenReturn(dto);
 
         PolicyDTO result = policyService.getPolicyById(100L);
 

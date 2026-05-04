@@ -39,6 +39,9 @@ class AdminCoverageBoosterTest {
 
         ReportDTO report = ReportDTO.builder().totalClaims(5L).build();
         assertEquals(5L, report.getTotalClaims());
+
+        ClaimDetailsDTO claimDetails = new ClaimDetailsDTO(1L, 1L, 1L, "D", 100.0, "S", LocalDateTime.now(), List.of(), "R");
+        assertEquals("R", claimDetails.getRemarks());
     }
 
     @Test

@@ -45,6 +45,12 @@ public class PolicyController {
         return ResponseEntity.ok(policyService.getAllPolicyTypes());
     }
 
+    @Operation(summary = "Get Policy Type by ID", description = "Get details of a specific insurance product")
+    @GetMapping("/types/{id}")
+    public ResponseEntity<PolicyTypeDTO> getPolicyTypeById(@PathVariable Long id) {
+        return ResponseEntity.ok(policyService.getPolicyTypeById(id));
+    }
+
     @Operation(summary = "Create Policy Type", description = "Add a new insurance product (Admin only)")
     @PostMapping("/types")
     public ResponseEntity<PolicyTypeDTO> createPolicyType(
@@ -90,5 +96,11 @@ public class PolicyController {
     @GetMapping("/count")
     public ResponseEntity<Long> getTotalPolicies() {
         return ResponseEntity.ok(policyService.getTotalPolicies());
+    }
+
+    @Operation(summary = "Get Total Revenue", description = "Get sum of all policy premium amounts")
+    @GetMapping("/revenue")
+    public ResponseEntity<java.math.BigDecimal> getTotalRevenue() {
+        return ResponseEntity.ok(policyService.getTotalRevenue());
     }
 }

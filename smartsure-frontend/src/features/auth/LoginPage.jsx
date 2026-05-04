@@ -31,9 +31,9 @@ export default function LoginPage() {
     try {
       const res = await login(data);
       dispatch(loginSuccess(res.data));
-      showToast({ type: 'success', title: 'Welcome back!', message: `Signed in as ${res.data.firstName}` });
+      showToast({ type: 'success', title: 'Welcome back!', message: `Signed in as ${res.data.name}` });
       const from = location.state?.from?.pathname;
-      navigate(from || (res.data.role === 'ROLE_ADMIN' ? '/admin/dashboard' : '/dashboard'));
+      navigate(from || (res.data.role === 'ADMIN' ? '/admin/dashboard' : '/dashboard'));
     } catch (err) {
       setApiError(err.response?.data?.message || 'Invalid email or password.');
     } finally {

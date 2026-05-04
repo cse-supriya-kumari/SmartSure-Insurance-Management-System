@@ -73,7 +73,7 @@ export default function ClaimDetail() {
               {[
                 { label: 'Claimed Amount', value: `₹${claim.claimedAmount.toLocaleString('en-IN')}` },
                 { label: 'Policy ID', value: `#${claim.policyId}` },
-                { label: 'Submitted', value: format(new Date(claim.submittedAt), 'dd MMM yyyy') },
+                { label: 'Submitted', value: claim.submittedAt ? format(new Date(claim.submittedAt), 'dd MMM yyyy') : '—' },
                 { label: 'Resolved', value: claim.resolvedAt ? format(new Date(claim.resolvedAt), 'dd MMM yyyy') : '—' },
               ].map(item => (
                 <div key={item.label} style={{ background: 'var(--surface-2)', borderRadius: '10px', padding: '14px' }}>
@@ -103,7 +103,7 @@ export default function ClaimDetail() {
               <div key={doc.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', background: 'var(--surface-2)', borderRadius: '8px', border: '1px solid var(--border)', marginBottom: '8px' }}>
                 <FileText size={16} style={{ color: 'var(--brand)', flexShrink: 0 }} />
                 <span style={{ flex: 1, fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-primary)' }}>{doc.fileName}</span>
-                <span style={{ fontFamily: 'var(--font-body)', fontSize: '11px', color: 'var(--text-faint)' }}>{format(new Date(doc.uploadedAt), 'dd MMM')}</span>
+                <span style={{ fontFamily: 'var(--font-body)', fontSize: '11px', color: 'var(--text-faint)' }}>{doc.uploadedAt ? format(new Date(doc.uploadedAt), 'dd MMM') : '—'}</span>
                 {doc.downloadUrl && <a href={doc.downloadUrl} target="_blank" rel="noreferrer" style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--brand)', fontWeight: 600, textDecoration: 'none' }}>Download</a>}
               </div>
             ))}

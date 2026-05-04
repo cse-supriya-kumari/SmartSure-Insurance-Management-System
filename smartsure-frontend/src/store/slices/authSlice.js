@@ -5,8 +5,7 @@ const initialState = {
   role: localStorage.getItem('role'),
   userId: localStorage.getItem('userId') ? Number(localStorage.getItem('userId')) : null,
   isAuthenticated: !!localStorage.getItem('token'),
-  firstName: localStorage.getItem('firstName'),
-  lastName: localStorage.getItem('lastName'),
+  name: localStorage.getItem('name'),
   email: localStorage.getItem('email'),
 };
 
@@ -15,20 +14,18 @@ const authSlice = createSlice({
   initialState,
   reducers: {
     loginSuccess: (state, action) => {
-      const { token, role, userId, email, firstName, lastName } = action.payload;
+      const { token, role, userId, email, name } = action.payload;
       state.token = token;
       state.role = role;
       state.userId = userId;
       state.isAuthenticated = true;
-      state.firstName = firstName;
-      state.lastName = lastName;
+      state.name = name;
       state.email = email;
 
       localStorage.setItem('token', token);
       localStorage.setItem('role', role);
       localStorage.setItem('userId', String(userId));
-      localStorage.setItem('firstName', firstName);
-      localStorage.setItem('lastName', lastName);
+      localStorage.setItem('name', name);
       localStorage.setItem('email', email);
     },
     logout: (state) => {
@@ -36,11 +33,10 @@ const authSlice = createSlice({
       state.role = null;
       state.userId = null;
       state.isAuthenticated = false;
-      state.firstName = null;
-      state.lastName = null;
+      state.name = null;
       state.email = null;
 
-      ['token', 'role', 'userId', 'firstName', 'lastName', 'email'].forEach((k) =>
+      ['token', 'role', 'userId', 'name', 'email'].forEach((k) =>
         localStorage.removeItem(k)
       );
     },

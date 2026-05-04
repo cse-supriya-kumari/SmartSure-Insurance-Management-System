@@ -5,9 +5,10 @@ import { getDashboard, getReports } from '../../../api/adminApi';
 import MetricStrip from '../../../shared/components/MetricStrip';
 import SkeletonRow from '../../../shared/components/SkeletonRow';
 import { useAppSelector } from '../../../store';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 
 export default function AdminDashboard() {
-  const { firstName } = useAppSelector((s) => s.auth);
+  const { name } = useAppSelector((s) => s.auth);
   const [dashboard, setDashboard] = useState(null);
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -41,7 +42,7 @@ export default function AdminDashboard() {
     <div>
       <div style={{ marginBottom: '28px' }}>
         <p className="page-role-label">ADMIN PORTAL</p>
-        <h1 className="page-title">Welcome back, {firstName}</h1>
+        <h1 className="page-title">Welcome back, {name?.split(' ')[0]}</h1>
         <p className="page-subtitle">Here's an overview of the SmartSure platform today</p>
       </div>
 
@@ -73,31 +74,85 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      {report && (
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '24px', marginBottom: '24px' }} className="dash-middle-grid">
         <div className="card">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
             <BarChart3 size={18} style={{ color: 'var(--brand)' }} />
-            <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Platform Report</h2>
+            <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Claim Distribution</h2>
           </div>
-          <div className="rpt-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
-            {[
-              { label: 'Total Revenue',    value: `₹${report.totalRevenue.toLocaleString('en-IN')}`, icon: TrendingUp,    color: 'var(--brand)' },
-              { label: 'Approved Claims',  value: report.approvedClaims,                              icon: ClipboardCheck, color: 'var(--green)' },
-              { label: 'Rejected Claims',  value: report.rejectedClaims,                              icon: AlertCircle,   color: 'var(--red)' },
-            ].map((item) => (
-              <div key={item.label} style={{ background: 'var(--surface-2)', borderRadius: '12px', padding: '18px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-                  <item.icon size={16} style={{ color: item.color }} />
-                  <span style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--text-muted)' }}>{item.label}</span>
-                </div>
-                <div style={{ fontFamily: 'var(--font-heading)', fontSize: '24px', fontWeight: 700, color: 'var(--text-primary)' }}>{item.value}</div>
-              </div>
-            ))}
+          <div style={{ height: '300px', width: '100%' }}>
+            {report ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={[
+                      { name: 'Approved', value: report.approvedClaims },
+                      { name: 'Rejected', value: report.rejectedClaims },
+                      { name: 'Pending',  value: dashboard?.pendingClaims || 0 },
+                    ].filter(d => d.value > 0)}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    <Cell fill="var(--green)" />
+                    <Cell fill="var(--red)" />
+                    <Cell fill="var(--amber)" />
+                  </Pie>
+                  <Tooltip 
+                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: 'var(--shadow-md)' }}
+                    itemStyle={{ fontFamily: 'var(--font-body)', fontSize: '12px' }}
+                  />
+                  <Legend 
+                    verticalAlign="bottom" 
+                    height={36} 
+                    formatter={(val) => <span style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--text-muted)' }}>{val}</span>}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-faint)' }}>Loading chart...</div>
+            )}
           </div>
+        </div>
+
+        {report && (
+          <div className="card">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+              <TrendingUp size={18} style={{ color: 'var(--brand)' }} />
+              <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Financial Overview</h2>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+               <div style={{ background: 'var(--brand-subtle)', borderRadius: '12px', padding: '24px', textAlign: 'center' }}>
+                  <div style={{ fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--brand)', marginBottom: '8px', fontWeight: 600 }}>Total Platform Revenue</div>
+                  <div style={{ fontFamily: 'var(--font-heading)', fontSize: '36px', fontWeight: 800, color: 'var(--brand)' }}>₹{report.totalRevenue.toLocaleString('en-IN')}</div>
+               </div>
+               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div style={{ background: 'var(--surface-2)', borderRadius: '12px', padding: '16px' }}>
+                    <div style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>Approved Claims</div>
+                    <div style={{ fontFamily: 'var(--font-heading)', fontSize: '20px', fontWeight: 700, color: 'var(--green)' }}>{report.approvedClaims}</div>
+                  </div>
+                  <div style={{ background: 'var(--surface-2)', borderRadius: '12px', padding: '16px' }}>
+                    <div style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>Rejected Claims</div>
+                    <div style={{ fontFamily: 'var(--font-heading)', fontSize: '20px', fontWeight: 700, color: 'var(--red)' }}>{report.rejectedClaims}</div>
+                  </div>
+               </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Hidden old report section */}
+      {false && report && (
+        <div className="card">
+          {/* ... */}
         </div>
       )}
 
       <style>{`
+        @media(max-width:1100px){.dash-middle-grid{grid-template-columns:1fr!important}}
         @media(max-width:900px){.ad-grid{grid-template-columns:1fr 1fr!important}}
         @media(max-width:640px){.ad-grid,.rpt-grid{grid-template-columns:1fr!important}}
         @media(max-width:900px){.rpt-grid{grid-template-columns:1fr 1fr!important}}

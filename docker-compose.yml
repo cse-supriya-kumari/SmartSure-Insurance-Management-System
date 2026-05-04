@@ -1,270 +1,178 @@
+version: '3.8'
+
 services:
-
-  # ========================
-  # Infrastructure Services
-  # ========================
-
+  # Infrastructure
   mysql:
     image: mysql:8.0
     container_name: smartsure-mysql
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
     ports:
       - "3307:3306"
-    volumes:
-      - mysql-data:/var/lib/mysql
-      - ./docker/mysql-init:/docker-entrypoint-initdb.d
-    healthcheck:
-      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
-      interval: 10s
-      timeout: 5s
-      retries: 10
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root}
+      MYSQL_DATABASE: smartsure
     networks:
-      - smartsure-net
+      - smartsure-network
+    volumes:
+      - ./docker/mysql-init:/docker-entrypoint-initdb.d
+
+  redis:
+    image: redis:alpine
+    container_name: smartsure-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - smartsure-network
 
   rabbitmq:
-    image: rabbitmq:3-management
+    image: rabbitmq:3-management-alpine
     container_name: smartsure-rabbitmq
     ports:
       - "5672:5672"
       - "15672:15672"
-    environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
-    healthcheck:
-      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
-      interval: 10s
-      timeout: 5s
-      retries: 10
     networks:
-      - smartsure-net
+      - smartsure-network
 
-  redis:
-    image: redis:7-alpine
-    container_name: smartsure-redis
-    ports:
-      - "6379:6379"
-    healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - smartsure-net
-
-  zipkin:
-    image: openzipkin/zipkin
-    container_name: smartsure-zipkin
-    ports:
-      - "9411:9411"
-    networks:
-      - smartsure-net
-
-  # ========================
-  # Platform Services
-  # ========================
-
+  # Microservices
   eureka-server:
     build: ./eureka-server
-    container_name: smartsure-eureka
+    container_name: eureka-server
     ports:
       - "8761:8761"
-    healthcheck:
-      test: [ "CMD-SHELL", "curl -f http://localhost:8761/actuator/health || exit 1" ]
-      interval: 15s
-      timeout: 10s
-      retries: 10
-      start_period: 40s
     networks:
-      - smartsure-net
+      - smartsure-network
 
   config-server:
     build: ./config-server
-    container_name: smartsure-config
+    container_name: config-server
     ports:
       - "8888:8888"
     depends_on:
-      eureka-server:
-        condition: service_healthy
-    environment:
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
-    healthcheck:
-      test: [ "CMD-SHELL", "curl -f http://localhost:8888/actuator/health || exit 1" ]
-      interval: 15s
-      timeout: 10s
-      retries: 10
-      start_period: 40s
+      - eureka-server
     networks:
-      - smartsure-net
-
-  # ========================
-  # Business Services
-  # ========================
+      - smartsure-network
 
   auth-service:
     build: ./auth-service
-    container_name: smartsure-auth
+    container_name: auth-service
     ports:
       - "8081:8081"
-    depends_on:
-      mysql:
-        condition: service_healthy
-      eureka-server:
-        condition: service_healthy
-      config-server:
-        condition: service_healthy
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/auth_db
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/auth_db?useSSL=false&allowPublicKeyRetrieval=true
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-root}
-      SPRING_CONFIG_IMPORT: "optional:configserver:http://config-server:8888"
+      SPRING_REDIS_HOST: redis
+      SPRING_DATA_REDIS_HOST: redis
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
-      EUREKA_INSTANCE_HOSTNAME: auth-service
-      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
-      JWT_SECRET: ${JWT_SECRET}
-      MAIL_PASSWORD: ${MAIL_PASSWORD}
-      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
+      JWT_SECRET: ${JWT_SECRET:-9a4f2c8d3b7a1e5f8g9h0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e}
+    depends_on:
+      - mysql
+      - redis
+      - eureka-server
     networks:
-      - smartsure-net
+      - smartsure-network
 
   policy-service:
     build: ./policy-service
-    container_name: smartsure-policy
+    container_name: policy-service
     ports:
       - "8082:8082"
-    depends_on:
-      mysql:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-      eureka-server:
-        condition: service_healthy
-      config-server:
-        condition: service_healthy
-      auth-service:
-        condition: service_started
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/policy_db
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/policy_db?useSSL=false&allowPublicKeyRetrieval=true
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-root}
+      SPRING_REDIS_HOST: redis
+      SPRING_DATA_REDIS_HOST: redis
       SPRING_RABBITMQ_HOST: rabbitmq
-      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
-      SPRING_CONFIG_IMPORT: "optional:configserver:http://config-server:8888"
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
-      EUREKA_INSTANCE_HOSTNAME: policy-service
-      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
       AUTH_SERVICE_URL: http://auth-service:8081
-      JWT_SECRET: ${JWT_SECRET}
-      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
+      JWT_SECRET: ${JWT_SECRET:-9a4f2c8d3b7a1e5f8g9h0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e}
+    depends_on:
+      - mysql
+      - redis
+      - rabbitmq
+      - eureka-server
     networks:
-      - smartsure-net
+      - smartsure-network
 
   claims-service:
     build: ./claims-service
-    container_name: smartsure-claims
+    container_name: claims-service
     ports:
       - "8083:8083"
-    depends_on:
-      mysql:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-      eureka-server:
-        condition: service_healthy
-      config-server:
-        condition: service_healthy
-      policy-service:
-        condition: service_started
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/claims_db
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/claims_db?useSSL=false&allowPublicKeyRetrieval=true
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-root}
+      SPRING_REDIS_HOST: redis
+      SPRING_DATA_REDIS_HOST: redis
       SPRING_RABBITMQ_HOST: rabbitmq
-      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
-      SPRING_CONFIG_IMPORT: "optional:configserver:http://config-server:8888"
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
-      EUREKA_INSTANCE_HOSTNAME: claims-service
-      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+      AUTH_SERVICE_URL: http://auth-service:8081
       POLICY_SERVICE_URL: http://policy-service:8082
-      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
+      JWT_SECRET: ${JWT_SECRET:-9a4f2c8d3b7a1e5f8g9h0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e}
+    depends_on:
+      - mysql
+      - redis
+      - rabbitmq
+      - eureka-server
     volumes:
-      - claims-uploads:/app/uploads
+      - ./uploads/claims:/app/uploads/claims
     networks:
-      - smartsure-net
+      - smartsure-network
 
   admin-service:
     build: ./admin-service
-    container_name: smartsure-admin
+    container_name: admin-service
     ports:
       - "8084:8084"
-    depends_on:
-      mysql:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      eureka-server:
-        condition: service_healthy
-      config-server:
-        condition: service_healthy
-      auth-service:
-        condition: service_started
-      policy-service:
-        condition: service_started
-      claims-service:
-        condition: service_started
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/admin_db
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/admin_db?useSSL=false&allowPublicKeyRetrieval=true
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-root}
+      SPRING_REDIS_HOST: redis
       SPRING_RABBITMQ_HOST: rabbitmq
-      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
       SPRING_DATA_REDIS_HOST: redis
-      SPRING_CONFIG_IMPORT: "optional:configserver:http://config-server:8888"
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
-      EUREKA_INSTANCE_HOSTNAME: admin-service
-      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
       AUTH_SERVICE_URL: http://auth-service:8081
-      POLICY_SERVICE_URL: http://policy-service:8082
       CLAIMS_SERVICE_URL: http://claims-service:8083
-      JWT_SECRET: ${JWT_SECRET}
-      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
+      POLICY_SERVICE_URL: http://policy-service:8082
+      JWT_SECRET: ${JWT_SECRET:-9a4f2c8d3b7a1e5f8g9h0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e}
+    depends_on:
+      - mysql
+      - redis
+      - rabbitmq
+      - eureka-server
     networks:
-      - smartsure-net
+      - smartsure-network
 
   api-gateway:
     build: ./api-gateway
-    container_name: smartsure-gateway
+    container_name: api-gateway
     ports:
       - "8080:8080"
-    depends_on:
-      eureka-server:
-        condition: service_healthy
-      config-server:
-        condition: service_healthy
-      auth-service:
-        condition: service_started
-      policy-service:
-        condition: service_started
-      claims-service:
-        condition: service_started
-      admin-service:
-        condition: service_started
     environment:
-      SPRING_CONFIG_IMPORT: "optional:configserver:http://config-server:8888"
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
-      EUREKA_INSTANCE_HOSTNAME: api-gateway
-      JWT_SECRET: ${JWT_SECRET}
-      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
+      EUREKA_SERVER_HOST: eureka-server
+      CONFIG_SERVER_HOST: config-server
+      JWT_SECRET: ${JWT_SECRET:-9a4f2c8d3b7a1e5f8g9h0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e}
+    depends_on:
+      - eureka-server
+      - config-server
     networks:
-      - smartsure-net
+      - smartsure-network
 
-volumes:
-  mysql-data:
-  claims-uploads:
-
+  frontend:
+    build: ./smartsure-frontend
+    container_name: smartsure-frontend
+    ports:
+      - "3001:80"
+    environment:
+      REACT_APP_API_BASE_URL: http://localhost:8080
+    depends_on:
+      - api-gateway
+    networks:
+      - smartsure-network
 
 networks:
-  smartsure-net:
+  smartsure-network:
     driver: bridge

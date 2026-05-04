@@ -6,7 +6,7 @@ spring:
     name: api-gateway
 
   config:
-    import: "optional:configserver:http://localhost:8888"
+    import: "optional:configserver:http://${CONFIG_SERVER_HOST:localhost}:8888"
 
   cloud:
     gateway:
@@ -57,10 +57,9 @@ spring:
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: http://${EUREKA_SERVER_HOST:localhost}:8761/eureka/
   instance:
-    hostname: localhost
-    prefer-ip-address: false
+    prefer-ip-address: true
 
 jwt:
   secret: ${JWT_SECRET}
@@ -93,6 +92,10 @@ resilience4j:
         automaticTransitionFromOpenToHalfOpenEnabled: true
         waitDurationInOpenState: 5s
         failureRateThreshold: 50
+  timelimiter:
+    configs:
+      default:
+        timeoutDuration: 10s
 
 management:
   tracing:

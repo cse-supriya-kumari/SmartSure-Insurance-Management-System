@@ -18,8 +18,15 @@ public class ClaimDetailsDTO {
     private Long userId;
     @io.swagger.v3.oas.annotations.media.Schema(description = "Reason for claim", example = "Vehicle accident on highway")
     private String description;
+    @io.swagger.v3.oas.annotations.media.Schema(description = "Amount being claimed", example = "50000.00")
+    private Double claimedAmount;
     @io.swagger.v3.oas.annotations.media.Schema(description = "Current claim status", example = "PENDING")
     private String status;
+    @io.swagger.v3.oas.annotations.media.Schema(description = "Date when claim was filed")
+    private java.time.LocalDateTime submittedAt;
     @io.swagger.v3.oas.annotations.media.Schema(description = "Associated evidence documents")
     private List<ClaimDocumentDTO> documents;
+
+    @io.swagger.v3.oas.annotations.media.Schema(description = "Admin remarks for the customer")
+    private String remarks;
 }

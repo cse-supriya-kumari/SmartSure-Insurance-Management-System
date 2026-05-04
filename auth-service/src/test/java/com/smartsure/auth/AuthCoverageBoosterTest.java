@@ -49,7 +49,7 @@ class AuthCoverageBoosterTest {
         assertEquals(2L, emptyUser.getId());
 
         // Test DTOs
-        AuthResponse authResponse = new AuthResponse("token", "role", "name");
+        AuthResponse authResponse = new AuthResponse("token", "role", 1L, "name");
         assertEquals("token", authResponse.getToken());
         
         LoginRequest loginRequest = new LoginRequest("e", "p");

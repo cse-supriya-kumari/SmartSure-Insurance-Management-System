@@ -30,11 +30,17 @@ public class Claim {
     @Column(nullable = false)
     private ClaimStatus status;
 
+    @Column(nullable = false)
+    private Double claimedAmount;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @Column(columnDefinition = "TEXT")
+    private String remarks;
 
     @PrePersist
     protected void onCreate() {

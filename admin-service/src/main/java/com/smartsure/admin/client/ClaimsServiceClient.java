@@ -10,20 +10,30 @@ import java.util.List;
 public interface ClaimsServiceClient {
 
     @PutMapping("/{claimId}/status")
-    ClaimDetailsDTO updateClaimStatus(@PathVariable("claimId") Long claimId, @RequestParam("status") String status);
+    ClaimDetailsDTO updateClaimStatus(
+            @PathVariable("claimId") Long claimId, 
+            @RequestParam("status") String status, 
+            @RequestParam(value = "remarks", required = false) String remarks,
+            @RequestHeader("Authorization") String token);
 
     @GetMapping("/count")
-    Long getTotalClaims();
+    Long getTotalClaims(@RequestHeader("Authorization") String token);
 
     @GetMapping("/count/pending")
-    Long getPendingClaimsCount();
+    Long getPendingClaimsCount(@RequestHeader("Authorization") String token);
 
-    @GetMapping("/{claimId}")
-    ClaimDetailsDTO getClaimById(@PathVariable("claimId") Long claimId);
+    @GetMapping("/count/approved")
+    Long getApprovedClaimsCount(@RequestHeader("Authorization") String token);
+
+    @GetMapping("/count/rejected")
+    Long getRejectedClaimsCount(@RequestHeader("Authorization") String token);
+
+    @GetMapping("/status/{claimId}")
+    ClaimDetailsDTO getClaimById(@PathVariable("claimId") Long claimId, @RequestHeader("Authorization") String token);
 
     @GetMapping("/pending")
-    List<ClaimDetailsDTO> getPendingClaims();
+    List<ClaimDetailsDTO> getPendingClaims(@RequestHeader("Authorization") String token);
 
     @GetMapping("/{claimId}/documents")
-    List<com.smartsure.admin.dto.ClaimDocumentDTO> getClaimDocuments(@PathVariable("claimId") Long claimId);
+    List<com.smartsure.admin.dto.ClaimDocumentDTO> getClaimDocuments(@PathVariable("claimId") Long claimId, @RequestHeader("Authorization") String token);
 }

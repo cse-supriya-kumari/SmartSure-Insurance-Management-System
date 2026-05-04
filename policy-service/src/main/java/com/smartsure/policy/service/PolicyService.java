@@ -56,6 +56,7 @@ public class PolicyService {
 
     @Transactional
     @CircuitBreaker(name = "authService", fallbackMethod = "purchasePolicyFallback")
+    @CacheEvict(value = "userPolicies", key = "#request.userId")
     public PolicyDTO purchasePolicy(PolicyPurchaseRequest request, String token) {
         UserSummaryDTO user = authServiceClient.validateToken(token);
         if (user == null || (!"CUSTOMER".equals(user.getRole()) && !"ADMIN".equals(user.getRole()))) {
@@ -119,6 +120,13 @@ public class PolicyService {
         return mapToDTOWithPremiums(policy);
     }
 
+    @Cacheable(value = "policyTypes", key = "#id")
+    public PolicyTypeDTO getPolicyTypeById(Long id) {
+        PolicyType type = policyTypeRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Policy Type not found"));
+        return policyMapper.toPolicyTypeDTO(type);
+    }
+
     @Cacheable(value = "policyTypes", key = "'all-types'")
     public List<PolicyTypeDTO> getAllPolicyTypes() {
         return policyMapper.toPolicyTypeDTOList(policyTypeRepository.findAll());
@@ -143,6 +151,7 @@ public class PolicyService {
     }
 
     @Transactional
+    @CacheEvict(value = "policyTypes", allEntries = true)
     public PolicyTypeDTO updatePolicyType(Long id, PolicyTypeDTO request, String token) {
         UserSummaryDTO user = authServiceClient.validateToken(token);
         if (user == null || !"ADMIN".equals(user.getRole())) {
@@ -160,6 +169,7 @@ public class PolicyService {
     }
 
     @Transactional
+    @CacheEvict(value = "policyTypes", allEntries = true)
     public void deletePolicyType(Long id, String token) {
         UserSummaryDTO user = authServiceClient.validateToken(token);
         if (user == null || !"ADMIN".equals(user.getRole())) {
@@ -173,6 +183,11 @@ public class PolicyService {
 
     public long getTotalPolicies() {
         return policyRepository.count();
+    }
+
+    public java.math.BigDecimal getTotalRevenue() {
+        java.math.BigDecimal total = policyRepository.sumTotalPremiumAmount();
+        return total != null ? total : java.math.BigDecimal.ZERO;
     }
 
     private PolicyDTO mapToDTOWithPremiums(Policy policy) {

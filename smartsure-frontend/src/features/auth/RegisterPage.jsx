@@ -17,7 +17,6 @@ const schema = yup.object({
   address: yup.string().required('Address is required'),
   password: yup.string().min(8, 'At least 8 characters').matches(/[a-zA-Z]/, 'Must contain a letter').matches(/[0-9]/, 'Must contain a number').required('Password is required'),
   confirmPassword: yup.string().oneOf([yup.ref('password')], 'Passwords do not match').required('Please confirm your password'),
-  role: yup.string().oneOf(['ROLE_USER', 'ROLE_ADMIN']).required(),
 });
 
 function getStrength(pwd) {
@@ -43,7 +42,7 @@ export default function RegisterPage() {
 
   const { register, handleSubmit, formState: { errors } } = useForm({
     resolver: yupResolver(schema),
-    defaultValues: { role: 'ROLE_USER' },
+    defaultValues: { },
   });
 
   const strength = getStrength(pwdValue);
@@ -52,11 +51,16 @@ export default function RegisterPage() {
     setLoading(true);
     setApiError('');
     try {
-      const { confirmPassword, ...payload } = data;
+      const { confirmPassword, firstName, lastName, ...rest } = data;
+      const payload = {
+        ...rest,
+        name: `${firstName} ${lastName}`.trim(),
+        role: 'CUSTOMER'
+      };
       const res = await registerApi(payload);
       dispatch(loginSuccess(res.data));
-      showToast({ type: 'success', title: 'Account created!', message: `Welcome, ${res.data.firstName}!` });
-      navigate(res.data.role === 'ROLE_ADMIN' ? '/admin/dashboard' : '/dashboard');
+      showToast({ type: 'success', title: 'Account created!', message: `Welcome, ${res.data.name}!` });
+      navigate(res.data.role === 'ADMIN' ? '/admin/dashboard' : '/dashboard');
     } catch (err) {
       setApiError(err.response?.data?.message || 'Registration failed. Please try again.');
     } finally {
@@ -129,13 +133,6 @@ export default function RegisterPage() {
               </div>
             )}
 
-            <div style={{ marginBottom: '24px' }}>
-              <label className="form-label" htmlFor="role">Account Type</label>
-              <select id="role" className="form-input" {...register('role')}>
-                <option value="ROLE_USER">Customer</option>
-                <option value="ROLE_ADMIN">Admin</option>
-              </select>
-            </div>
 
             {apiError && (
               <div style={{ background: 'var(--red-bg)', border: '1px solid var(--red-border)', borderRadius: '10px', padding: '12px 14px', marginBottom: '16px', fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--red)' }}>{apiError}</div>

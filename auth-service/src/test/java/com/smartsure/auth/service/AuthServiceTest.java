@@ -5,6 +5,7 @@ import com.smartsure.auth.entity.Role;
 import com.smartsure.auth.entity.User;
 import com.smartsure.auth.exception.DuplicateResourceException;
 import com.smartsure.auth.repository.UserRepository;
+import com.smartsure.auth.mapper.AuthMapper;
 import com.smartsure.auth.security.JwtUtil;
 import com.smartsure.auth.security.UserDetailsImpl;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,6 +40,9 @@ class AuthServiceTest {
 
     @Mock
     private EmailService emailService;
+
+    @Mock
+    private AuthMapper authMapper;
 
     @InjectMocks
     private AuthService authService;
@@ -144,6 +148,8 @@ class AuthServiceTest {
     void testValidateTokenAndGetUser_success() {
         when(jwtUtil.extractUsername("ValidToken")).thenReturn("john@example.com");
         when(userRepository.findByEmail("john@example.com")).thenReturn(Optional.of(sampleUser));
+        UserSummaryDTO summaryDTO = UserSummaryDTO.builder().name("John Doe").role("CUSTOMER").build();
+        when(authMapper.toUserSummaryDTO(sampleUser)).thenReturn(summaryDTO);
 
         UserSummaryDTO response = authService.validateTokenAndGetUser("ValidToken");
 
@@ -220,7 +226,9 @@ class AuthServiceTest {
     @Test
     void testUpdateUserStatus() {
         UserStatusUpdateRequest request = new UserStatusUpdateRequest("INACTIVE");
+        UserSummaryDTO summaryDTO = UserSummaryDTO.builder().status("INACTIVE").build();
         when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
+        when(authMapper.toUserSummaryDTO(any(User.class))).thenReturn(summaryDTO);
 
         UserSummaryDTO response = authService.updateUserStatus(1L, request);
 
@@ -230,7 +238,9 @@ class AuthServiceTest {
 
     @Test
     void testGetUserById_success() {
+        UserSummaryDTO summaryDTO = UserSummaryDTO.builder().name("John Doe").build();
         when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
+        when(authMapper.toUserSummaryDTO(sampleUser)).thenReturn(summaryDTO);
 
         UserSummaryDTO user = authService.getUserById(1L);
 
