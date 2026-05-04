@@ -127,7 +127,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Log in to Docker Hub
-        if: github.ref == 'refs/heads/main' && secrets.DOCKERHUB_USERNAME != ''
+        if: github.ref == 'refs/heads/main'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -137,7 +137,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ${{ matrix.service }}
-          push: ${{ github.ref == 'refs/heads/main' && secrets.DOCKERHUB_USERNAME != '' }}
+          push: ${{ github.ref == 'refs/heads/main' }}
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/smartsure-${{ matrix.service }}:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/smartsure-${{ matrix.service }}:${{ github.sha }}
@@ -159,7 +159,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Log in to Docker Hub
-        if: github.ref == 'refs/heads/main' && secrets.DOCKERHUB_USERNAME != ''
+        if: github.ref == 'refs/heads/main'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -169,7 +169,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: smartsure-frontend
-          push: ${{ github.ref == 'refs/heads/main' && secrets.DOCKERHUB_USERNAME != '' }}
+          push: ${{ github.ref == 'refs/heads/main' }}
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/smartsure-frontend:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/smartsure-frontend:${{ github.sha }}
