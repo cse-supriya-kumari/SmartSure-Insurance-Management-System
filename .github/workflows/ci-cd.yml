@@ -139,10 +139,11 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build Docker image
+        if: env.DOCKERHUB_USERNAME != ''
         uses: docker/build-push-action@v5
         with:
           context: ${{ matrix.service }}
-          push: ${{ github.ref == 'refs/heads/main' && env.DOCKERHUB_USERNAME != '' }}
+          push: ${{ github.ref == 'refs/heads/main' }}
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/smartsure-${{ matrix.service }}:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/smartsure-${{ matrix.service }}:${{ github.sha }}
@@ -174,10 +175,11 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build Frontend Docker image
+        if: env.DOCKERHUB_USERNAME != ''
         uses: docker/build-push-action@v5
         with:
           context: smartsure-frontend
-          push: ${{ github.ref == 'refs/heads/main' && env.DOCKERHUB_USERNAME != '' }}
+          push: ${{ github.ref == 'refs/heads/main' }}
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/smartsure-frontend:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/smartsure-frontend:${{ github.sha }}
